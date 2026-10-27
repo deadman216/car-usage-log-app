@@ -1,31 +1,10 @@
-[README.md](https://github.com/user-attachments/files/33999752/README.md)
-# car-usage-log-app# Sanaya Vehicle Use Register
+# Sanaya Vehicle Use Register — browser app
 
-A vehicle log with an Electron desktop app and a browser-based, multi-device web app. Both use the same Express API and JSON data store.
+This folder contains the browser UI. Login, trips, admin tools, and the dashboard require the Express API server; hosting these files as a static site alone will not provide working authentication or data storage.
 
-## Desktop app (Windows)
+## Run locally
 
 From the project root:
-
-```powershell
-npm install
-npm start
-```
-
-Electron starts the local API on `127.0.0.1:3000` before opening the app. Data is stored in Electron's user-data directory and remains available after app updates. If port 3000 is already in use, close the other process and restart the app.
-
-The first run creates the default administrator account: **admin / admin123**. Change the password after signing in before using the app with real data.
-
-Build the installer and portable app with:
-
-```powershell
-npm run build
-npm run build:dir
-```
-
-## Browser and multi-device server
-
-For a browser on the same computer, run the server from the project root:
 
 ```powershell
 cd server
@@ -33,34 +12,16 @@ npm install
 npm start
 ```
 
-Open `http://localhost:3000/login.html`. For other devices on the same network, open `http://<host-computer-LAN-address>:3000/login.html`. The server must be running and reachable from those devices. Configure the host firewall to allow port 3000 on the trusted network.
+Open `http://localhost:3000/login.html`. The server serves this folder and stores browser/server deployment data in `server/data/sanaya.json`.
 
-The server creates `server/data/sanaya.json` on first run. Back up this file regularly. Browser/PWA installs use the server for login and trip data, so a static-only deployment is not sufficient; deploy the server and web files together.
+For use from other devices on the same trusted network, run the server on the host computer and open `http://<host-computer-LAN-address>:3000/login.html` from each device. Keep the server running and allow port 3000 through the host firewall as appropriate.
+
+The first run creates the default administrator account **admin / admin123**. Change that password before storing real information.
 
 ## Features
 
-- User registration and sign-in, with administrator and standard-user roles.
-- Trip logging with date/time ranges, vehicle details, and optional purpose.
-- Admin reports, trip deletion, dashboard filters, charts, and CSV export.
-- WebSocket presence updates in the admin panel.
-- Installable browser shell; the server is required for authenticated data access.
-
-## Project layout
-
-```text
-.
-├── electron-main.js
-├── preload.js
-├── package.json
-├── server/
-│   ├── server.js
-│   └── data/                 # Browser/server deployment data
-└── car-log-app/
-    ├── login.html
-    ├── index.html
-    ├── dashboard.html
-    ├── admin.html
-    ├── auth.js
-    ├── app.js
-    └── dashboard.js
-```
+- `login.html` — sign-in and account registration.
+- `index.html` — trip log and weekly/monthly reports.
+- `dashboard.html` — filters, charts, table, and CSV export.
+- `admin.html` — user, connection, and trip statistics.
+- `service-worker.js` — caches the browser app shell; API access still requires the server.

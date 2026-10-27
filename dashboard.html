@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sanaya — Reports Dashboard</title>
+  <meta name="description" content="Sanaya vehicle log — reports dashboard with filters, charts and CSV export." />
+
+  <link rel="manifest" href="manifest-dashboard.json" />
+  <meta name="theme-color" content="#D9A226" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Sanaya Reports" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <script src="auth.js"></script>
+  <script>
+    if (!window.SanayaAuth || !SanayaAuth.isLoggedIn()) location.replace("login.html?next=dashboard.html");
+    else if (!SanayaAuth.isAdmin()) location.replace("index.html");
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <img src="assets/logo.png" alt="Sanaya — Establishment for Investment" />
+        <div class="brand-text">
+          <h1 class="title">Reports Dashboard</h1>
+          <div class="kicker">Sanaya Establishment for Investment</div>
+        </div>
+      </div>
+      <a class="nav-link" href="index.html">Open trip log →</a>
+      <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+        <span style="font-size:13.5px; color:var(--muted);">Signed in as <strong data-username style="color:var(--ink)"></strong></span>
+        <button type="button" class="btn-secondary" data-logout style="padding:6px 12px; font-size:13px;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main dash-main" id="main">
+    <p class="empty-text">Loading…</p>
+    <noscript><div class="card"><p class="error-text">This dashboard needs JavaScript to run. Please enable JavaScript.</p></div></noscript>
+  </main>
+
+  <script src="dashboard.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

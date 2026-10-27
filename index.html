@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sanaya — Vehicle Use Register</title>
+  <meta name="description" content="Log and track vehicle use across your team — synced live across every device." />
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#D9A226" />
+
+  <!-- PWA / iOS install support -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Sanaya Car Log" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="auth.js"></script>
+  <script>if (!window.SanayaAuth || !SanayaAuth.isLoggedIn()) location.replace("login.html");</script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <img src="assets/logo.png" alt="SANAYA — Establishment for Investment" />
+        <div class="brand-text">
+          <h1 class="title">Vehicle Use Register</h1>
+          <div class="kicker">Sanaya Establishment for Investment</div>
+        </div>
+      </div>
+      <nav class="nav" id="nav" aria-label="Primary">
+        <button type="button" class="nav-btn active" data-view="submit">Log a trip</button>
+        <button type="button" class="nav-btn" data-view="weekly" data-admin="1">Weekly report</button>
+        <button type="button" class="nav-btn" data-view="monthly" data-admin="1">Monthly report</button>
+      </nav>
+    </div>
+    <div class="header-inner" style="padding-top:0;">
+      <a class="nav-link" href="dashboard.html" data-admin="1">Open reports dashboard →</a>
+      <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+        <span class="nav-link" style="color:var(--muted); font-weight:500;">Signed in as <strong data-username style="color:var(--ink)"></strong></span>
+        <button type="button" class="btn-secondary" data-logout style="padding:6px 12px; font-size:13px;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+    <p class="empty-text">Loading…</p>
+    <noscript><div class="card"><p class="error-text">This app needs JavaScript to run. Please enable JavaScript.</p></div></noscript>
+  </main>
+
+  <script>
+    // Users only have access to Log vehicle use — hide admin nav for non-admins
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        if (window.SanayaAuth && !SanayaAuth.isAdmin()) {
+          document.querySelectorAll('[data-admin="1"]').forEach(el => el.style.display = "none");
+          // also block programmatic view switch to weekly/monthly if triggered
+          const nav = document.getElementById("nav");
+          if (nav) {
+            nav.addEventListener("click", (e) => {
+              const btn = e.target.closest("[data-view='weekly'], [data-view='monthly']");
+              if (btn) { e.stopPropagation(); e.preventDefault(); }
+            }, true);
+          }
+        }
+      } catch {}
+    });
+  </script>
+  <script src="app.js"></script>
+
+  <script>
+    // Skip service worker in Electron (file://) — Electron handles offline via local files
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

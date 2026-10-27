@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sanaya — Admin Panel</title>
+  <meta name="description" content="Sanaya vehicle log — admin panel to manage users and view connected users." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .user-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .user-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .user-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--tally);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--navy);
+      flex-shrink: 0;
+    }
+    .user-info { flex: 1; }
+    .user-name { font-weight: 600; font-size: 15px; color: var(--ink); }
+    .user-detail { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+    .user-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .user-badge.admin {
+      background: #FDE68A;
+      color: #92400E;
+    }
+    .user-badge.user {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    .online-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse 2s infinite;
+    }
+    .offline-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #9CA3AF;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--rust);
+    }
+    .stat-label {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .refresh-btn {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { background: var(--bg); }
+  </style>
+  <script src="auth.js"></script>
+  <script>
+    if (!window.SanayaAuth || !SanayaAuth.isLoggedIn()) location.replace("login.html?next=admin.html");
+    else if (!SanayaAuth.isAdmin()) location.replace("index.html");
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <img src="assets/logo.png" alt="Sanaya — Establishment for Investment" />
+        <div class="brand-text">
+          <h1 class="title">Admin Panel</h1>
+          <div class="kicker">Sanaya Establishment for Investment</div>
+        </div>
+      </div>
+      <nav style="display:flex; gap:8px; align-items:center;">
+        <a class="nav-link" href="index.html">Trip Log</a>
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+      </nav>
+      <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+        <span style="font-size:13.5px; color:var(--muted);">Signed in as <strong data-username style="color:var(--ink)"></strong></span>
+        <button type="button" class="btn-secondary" data-logout style="padding:6px 12px; font-size:13px;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main dash-main" id="main">
+    <p class="empty-text">Loading…</p>
+  </main>
+
+  <script>
+    (function() {
+      "use strict";
+      const main = document.getElementById("main");
+      let connectedUsers = [];
+      let allUsers = [];
+      let stats = {};
+
+      async function loadData() {
+        try {
+          const [usersData, connectedData, statsData] = await Promise.all([
+            SanayaAuth.apiCall('GET', '/api/admin/users'),
+            SanayaAuth.apiCall('GET', '/api/admin/connected'),
+            SanayaAuth.apiCall('GET', '/api/admin/stats')
+          ]);
+          allUsers = usersData.users || [];
+          connectedUsers = connectedData.connected || [];
+          stats = statsData;
+        } catch (e) {
+          console.error("Failed to load admin data", e);
+        }
+      }
+
+      function getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      }
+
+      function formatTime(ts) {
+        if (!ts) return "Never";
+        const d = new Date(ts);
+        return d.toLocaleString();
+      }
+
+      function isOnline(userId) {
+        return connectedUsers.some(u => u.id === userId);
+      }
+
+      function render() {
+        const onlineCount = connectedUsers.length;
+
+        main.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">${stats.totalUsers || 0}</div>
+              <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" style="color:#10B981;">${onlineCount}</div>
+              <div class="stat-label">Online Now</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${stats.totalTrips || 0}</div>
+              <div class="stat-label">Total Trips</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${stats.tripsThisWeek || 0}</div>
+              <div class="stat-label">Trips This Week</div>
+            </div>
+          </div>
+
+          <section class="card">
+            <div class="section-header">
+              <h2 class="section-title">Connected Users</h2>
+              <button class="refresh-btn" id="refresh-btn">Refresh</button>
+            </div>
+            <p class="section-sub">Users currently logged in to the system.</p>
+            ${connectedUsers.length === 0
+              ? '<p class="empty-text">No users currently connected.</p>'
+              : `<div class="user-grid">
+                  ${connectedUsers.map(u => `
+                    <div class="user-card">
+                      <div class="user-avatar">${getInitials(u.displayName || u.username)}</div>
+                      <div class="user-info">
+                        <div class="user-name">${escapeHtml(u.displayName || u.username)}</div>
+                        <div class="user-detail">@${escapeHtml(u.username)}</div>
+                        <div class="user-detail">Connected: ${formatTime(u.connected_at)}</div>
+                      </div>
+                      <div class="online-dot" title="Online"></div>
+                    </div>
+                  `).join('')}
+                </div>`
+            }
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <h2 class="section-title">All Registered Users</h2>
+            </div>
+            <p class="section-sub">All user accounts registered in the system.</p>
+            <div class="user-grid">
+              ${allUsers.map(u => `
+                <div class="user-card">
+                  <div class="user-avatar">${getInitials(u.display_name || u.username)}</div>
+                  <div class="user-info">
+                    <div class="user-name">${escapeHtml(u.display_name || u.username)}</div>
+                    <div class="user-detail">@${escapeHtml(u.username)}</div>
+                    <div class="user-detail">Joined: ${formatTime(u.created_at)}</div>
+                    <div class="user-detail">Last login: ${formatTime(u.last_login)}</div>
+                  </div>
+                  <span class="user-badge ${u.role}">${u.role}</span>
+                  ${isOnline(u.id) ? '<div class="online-dot" title="Online"></div>' : '<div class="offline-dot" title="Offline"></div>'}
+                </div>
+              `).join('')}
+            </div>
+          </section>
+        `;
+
+        document.getElementById("refresh-btn").addEventListener("click", async () => {
+          await loadData();
+          render();
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+        }[c]));
+      }
+
+      // WebSocket for live presence updates
+      SanayaAuth.onPresenceUpdate((users) => {
+        connectedUsers = users;
+        render();
+      });
+
+      async function init() {
+        await loadData();
+        render();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
